@@ -45,20 +45,18 @@ def dump_docs(envelope, db, docs):
                 if 'data' not in info:
                     attachment = db.get_attachment(doc, name)
                     # In case the attachment is not in the db
-
                     if attachment is None:
                         data = {}
                         print('Missing attachment')
                     else:
                         data = attachment.read()
-
                 else:
                     try:
                         data = b64decode(info['data'])
                     except TypeError as e:
                         print('Could not decode attachment')
                         data = {}
-                    
+
                 if data:
                     parts.add(content_type, data, {'Content-ID': name})
 
