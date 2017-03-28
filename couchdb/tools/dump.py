@@ -43,11 +43,24 @@ def dump_docs(envelope, db, docs):
                     content_type = info.get('content-type')
 
                 if 'data' not in info:
-                    data = db.get_attachment(doc, name).read()
-                else:
-                    data = b64decode(info['data'])
+                    attachment = db.get_attachment(doc, name)
+                    # In case the attachment is not in the db
 
-                parts.add(content_type, data, {'Content-ID': name})
+                    if attachment is None:
+                        data = {}
+                        print('Missing attachment')
+                    else:
+                        data = attachment.read()
+
+                else:
+                    try:
+                        data = b64decode(info['data'])
+                    except TypeError as e:
+                        print('Could not decode attachment')
+                        data = {}
+                    
+                if data:
+                    parts.add(content_type, data, {'Content-ID': name})
 
             parts.close()
 
