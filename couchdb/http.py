@@ -298,7 +298,7 @@ class Session(object):
             while True:
                 try:
                     return _try_request()
-                except socket.error as e:
+                except Exception as e:
                     ecode = e.args[0]
                     if ecode not in self.retryable_errors:
                         raise
