@@ -72,7 +72,10 @@ def read_multipart(fileobj, boundary=None):
         if in_headers:
             line = line.replace(CRLF, b'\n')
             if line != b'\n':
-                name, value = [item.strip() for item in line.split(b':', 1)]
+                try:
+                    name, value = [item.strip() for item in line.split(b':', 1)]
+                except ValueError:
+                    continue
                 name = name.lower().decode('ascii')
                 value, charset = header.decode_header(value.decode('utf-8'))[0]
                 if charset is None:

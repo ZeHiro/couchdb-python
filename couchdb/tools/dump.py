@@ -31,11 +31,7 @@ def dump_docs(envelope, db, docs):
         jsondoc = json.encode(doc)
 
         if attachments:
-            parts = envelope.open({
-                'Content-ID': doc.id,
-                'ETag': '"%s"' % doc.rev
-            })
-            parts.add('application/json', jsondoc)
+            open_envelope = False
             for name, info in attachments.items():
 
                 content_type = info.get('content_type')
@@ -57,7 +53,14 @@ def dump_docs(envelope, db, docs):
                         print('Could not decode attachment')
                         data = {}
 
-                if data:
+                if data and content_type:
+                    if not open_envelope:
+                        parts = envelope.open({
+                            'Content-ID': doc.id,
+                            'ETag': '"%s"' % doc.rev
+                        })
+                        parts.add('application/json', jsondoc)
+                        open_envelope = True
                     parts.add(content_type, data, {'Content-ID': name})
 
             parts.close()

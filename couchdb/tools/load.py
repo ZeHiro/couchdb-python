@@ -21,7 +21,6 @@ from couchdb import json
 from couchdb.client import Database
 from couchdb.multipart import read_multipart
 
-
 def load_db(fileobj, dburl, username=None, password=None, ignore_errors=False):
     db = Database(dburl)
     if username is not None and password is not None:
@@ -29,21 +28,24 @@ def load_db(fileobj, dburl, username=None, password=None, ignore_errors=False):
 
     for headers, is_multipart, payload in read_multipart(fileobj):
         docid = headers['content-id']
+        try:
+            if is_multipart: # doc has attachments
+                for headers, _, payload in payload:
+                    if 'content-id' not in headers:
+                        doc = json.decode(payload)
+                        doc['_attachments'] = {}
+                    else:
+                        doc['_attachments'][headers['content-id']] = {
+                            'data': b64encode(payload).decode('ascii'),
+                            'content_type': headers['content-type'],
+                            'length': len(payload)
+                        }
 
-        if is_multipart: # doc has attachments
-            for headers, _, payload in payload:
-                if 'content-id' not in headers:
-                    doc = json.decode(payload)
-                    doc['_attachments'] = {}
-                else:
-                    doc['_attachments'][headers['content-id']] = {
-                        'data': b64encode(payload).decode('ascii'),
-                        'content_type': headers['content-type'],
-                        'length': len(payload)
-                    }
-
-        else: # no attachments, just the JSON
-            doc = json.decode(payload)
+            else: # no attachments, just the JSON
+                doc = json.decode(payload)
+        except ValueError as e:
+            print('Error: %s' % e, file=sys.stderr)
+            continue
 
         del doc['_rev']
         print('Loading document %r' % docid, file=sys.stderr)
